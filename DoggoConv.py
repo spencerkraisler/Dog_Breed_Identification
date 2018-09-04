@@ -107,7 +107,7 @@ class RandomCrop(object):
 		new_h, new_w = self.output_size
 		image = transforms.RandomCrop([new_h, new_w])(image)
 		return {'breed': breed, 'image': image}
-class ToNormalizedTensor(object):
+class ToTensor(object):
 	# Convert ndarrays in sample to torch Tensors
 
 	def __call__(self, sample):
@@ -129,7 +129,7 @@ batch_size = 10
 
 train_set = DoggoDataset(csv_file='Doggos/labels.csv', root_dir='Doggos/', transform=transforms.Compose([Resize(300), 
 																									   RandomCrop(300), 
-																									   ToNormalizedTensor()]))
+																									   ToTensor()]))
 train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
 class SimpleConv(torch.nn.Module):
