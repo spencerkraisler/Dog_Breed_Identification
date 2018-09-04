@@ -132,29 +132,27 @@ train_set = DoggoDataset(csv_file='Doggos/labels.csv', root_dir='Doggos/', trans
 																									   ToTensor()]))
 train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
+
 class SimpleConv(torch.nn.Module):
 
 	def __init__(self):
 		super(SimpleConv, self).__init__()
-	
-		self.layer1 = torch.nn.Sequential(
-			torch.nn.Conv2d(3, 10, kernel_size=5, stride=2, padding=2),
-			torch.nn.ReLU(),
-			torch.nn.MaxPool2d(kernel_size=4, stride=2))
-
-		self.layer2 = torch.nn.Sequential(
-			torch.nn.Conv2d(10,20, kernel_size=5, stride=2, padding=2),
-			torch.nn.ReLU(),
-			torch.nn.MaxPool2d(kernel_size=2, stride=2))
-
-		self.out = torch.nn.Linear(6480, 120)
+		self.conv1 = torch.nn.Conv2d(3, 6, 5)
+		self.pool = torch.nn.MaxPool2d(2, 2)
+		self.conv2 = torch.nn.Conv2d(6, 16, 5)
+		self.fc1 = torch.nn.Linear(82944, 200)
+		self.fc2 = torch.nn.Linear(200, 150)
+		self.fc3 = torch.nn.Linear(150, 120)
 
 	def forward(self, x):
-		x = self.layer1(x)
-		x = self.layer2(x)
-		x = x.view(x.size(0), -1)
-		x = self.out(x)
+		x = self.pool(F.relu(self.conv1(x)))
+		x = self.pool(F.relu(self.conv2(x)))
+		x = x.view(x.shape[0], -1)
+		x = F.relu(self.fc1(x))
+		x = F.relu(self.fc2(x))
+		x = self.fc3(x)
 		return x
+
 
 model = SimpleConv()
 
@@ -162,15 +160,15 @@ criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 total_step = len(train_loader)
-showTorchImage(train_set[2342]['image'])
+
 # training network
 for epoch in range(n_epochs):
 	for i, samples in enumerate(train_loader):
 		images = samples['image']
 		breeds = samples['breed']
 		outputs = model.forward(images)
-		breeds = breeds.view(breeds.size(0),-1)
-		outputs = outputs.view(outputs.size(0),-1)
+		#breeds = breeds.view(breeds.size(0),-1)
+		#outputs = outputs.view(outputs.size(0),-1)
 		 # Forward pass
 		loss = criterion(outputs, breeds)
 		# Backward and optimize
