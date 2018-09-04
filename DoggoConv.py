@@ -124,7 +124,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 learning_rate = .001
-n_epochs = 6
+n_epochs = 1
 batch_size = 10
 
 train_set = DoggoDataset(csv_file='Doggos/labels.csv', root_dir='Doggos/', transform=transforms.Compose([Resize(300), 
@@ -137,45 +137,60 @@ class SimpleConv(torch.nn.Module):
 
 	def __init__(self):
 		super(SimpleConv, self).__init__()
-		self.conv1 = torch.nn.Conv2d(3, 6, 5)
+		self.layer1 = torch.nn.Sequential(
+		  	torch.nn.Conv2d(3, 10, 5, 2),
+		  	torch.nn.BatchNorm2d(10),
+		  	torch.nn.ReLU())
+		self.layer2 = torch.nn.Sequential(
+			torch.nn.Conv2d(10, 15, 5, 2),
+			torch.nn.BatchNorm2d(15),
+			torch.nn.ReLU())
 		self.pool = torch.nn.MaxPool2d(2, 2)
-		self.conv2 = torch.nn.Conv2d(6, 16, 5)
-		self.fc1 = torch.nn.Linear(82944, 200)
-		self.fc2 = torch.nn.Linear(200, 150)
-		self.fc3 = torch.nn.Linear(150, 120)
+
+		self.fc1 = torch.nn.Linear(4335, 120)
 
 	def forward(self, x):
-		x = self.pool(F.relu(self.conv1(x)))
-		x = self.pool(F.relu(self.conv2(x)))
+		x = self.layer1(x)
+		x = self.pool(x)
+		x = self.layer2(x)
+		x = self.pool(x)
 		x = x.view(x.shape[0], -1)
-		x = F.relu(self.fc1(x))
-		x = F.relu(self.fc2(x))
-		x = self.fc3(x)
+		x = self.fc1(x)
+		x = torch.nn.Softmax()(x)
 		return x
 
 
 model = SimpleConv()
 
-criterion = torch.nn.MSELoss()
+criterion = torch.nn.NLLLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 total_step = len(train_loader)
+
+
+def getIndex(tensor):
+	idx = 0
+	for i in range(tensor.shape[0]):
+		if tensor[i] == 1: idx = i
+	return idx
 
 # training network
 for epoch in range(n_epochs):
 	for i, samples in enumerate(train_loader):
 		images = samples['image']
-		breeds = samples['breed']
+		breeds = samples['breed'].long()
 		outputs = model.forward(images)
-		#breeds = breeds.view(breeds.size(0),-1)
-		#outputs = outputs.view(outputs.size(0),-1)
+		temp = torch.zeros(batch_size).long()
+		for j in range(batch_size): 
+			temp[j] = getIndex(breeds[j])
+		breeds = temp
 		 # Forward pass
 		loss = criterion(outputs, breeds)
 		# Backward and optimize
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
-		if (i+1) % 100 == 0:
+		if (i+1) % 50 == 0:
 			print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, n_epochs, i+1, total_step, loss.item()))
 
 
