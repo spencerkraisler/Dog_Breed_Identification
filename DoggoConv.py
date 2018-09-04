@@ -33,7 +33,6 @@ def indecies_to_one_hot_vectors(indecies):
 
 # turns torch tensor into pil image and shows it
 def showTorchImage(image):
-	image = image.div(255.0)
 	image = transforms.ToPILImage()(image)
 	image.show()
 
@@ -107,6 +106,7 @@ class RandomCrop(object):
 		new_h, new_w = self.output_size
 		image = transforms.RandomCrop([new_h, new_w])(image)
 		return {'breed': breed, 'image': image}
+
 class ToTensor(object):
 	# Convert ndarrays in sample to torch Tensors
 
@@ -162,7 +162,7 @@ criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 total_step = len(train_loader)
-
+showTorchImage(train_set[2342]['image'])
 # training network
 for epoch in range(n_epochs):
 	for i, samples in enumerate(train_loader):
