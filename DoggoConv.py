@@ -107,7 +107,7 @@ class RandomCrop(object):
 		image = transforms.RandomCrop([new_h, new_w])(image)
 		return {'breed': breed, 'image': image}
 
-class ToTensor(object):
+class ToNormalizedTensor(object):
 	# Convert ndarrays in sample to torch Tensors
 
 	def __call__(self, sample):
@@ -117,7 +117,7 @@ class ToTensor(object):
 		# numpy image: <height x width x color>
 		# torch image: <color x height x width>
 		image = image.transpose((2,0,1))
-		image = torch.from_numpy(image).float()
+		image = torch.from_numpy(image).float().div(255.0)
 		return {'breed': breed, 'image': image}
 
 from torch.autograd import Variable
@@ -129,7 +129,7 @@ batch_size = 10
 
 train_set = DoggoDataset(csv_file='Doggos/labels.csv', root_dir='Doggos/', transform=transforms.Compose([Resize(300), 
 																									   RandomCrop(300), 
-																									   ToTensor()]))
+																									   ToNormalizedTensor()]))
 train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
 
@@ -138,16 +138,16 @@ class SimpleConv(torch.nn.Module):
 	def __init__(self):
 		super(SimpleConv, self).__init__()
 		self.layer1 = torch.nn.Sequential(
-		  	torch.nn.Conv2d(3, 10, 5, 2),
-		  	torch.nn.BatchNorm2d(10),
+		  	torch.nn.Conv2d(3, 20, 5, 2),
+		  	torch.nn.BatchNorm2d(20),
 		  	torch.nn.ReLU())
 		self.layer2 = torch.nn.Sequential(
-			torch.nn.Conv2d(10, 15, 5, 2),
-			torch.nn.BatchNorm2d(15),
+			torch.nn.Conv2d(20, 40, 5, 2),
+			torch.nn.BatchNorm2d(40),
 			torch.nn.ReLU())
 		self.pool = torch.nn.MaxPool2d(2, 2)
 
-		self.fc1 = torch.nn.Linear(4335, 120)
+		self.fc1 = torch.nn.Linear(11560, 120)
 
 	def forward(self, x):
 		x = self.layer1(x)
@@ -162,7 +162,7 @@ class SimpleConv(torch.nn.Module):
 
 model = SimpleConv()
 
-criterion = torch.nn.NLLLoss()
+criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 total_step = len(train_loader)
@@ -181,7 +181,7 @@ for epoch in range(n_epochs):
 		breeds = samples['breed'].long()
 		outputs = model.forward(images)
 		temp = torch.zeros(batch_size).long()
-		for j in range(batch_size): 
+		for j in range(breeds.shape[0]): 
 			temp[j] = getIndex(breeds[j])
 		breeds = temp
 		 # Forward pass
@@ -191,6 +191,8 @@ for epoch in range(n_epochs):
 		loss.backward()
 		optimizer.step()
 		if (i+1) % 50 == 0:
+			print(breeds[0])
+			print(outputs[0])
 			print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, n_epochs, i+1, total_step, loss.item()))
 
 
