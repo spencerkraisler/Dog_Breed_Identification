@@ -107,7 +107,6 @@ class RandomCrop(object):
 		new_h, new_w = self.output_size
 		image = transforms.RandomCrop([new_h, new_w])(image)
 		return {'breed': breed, 'image': image}
-
 class ToNormalizedTensor(object):
 	# Convert ndarrays in sample to torch Tensors
 
@@ -119,7 +118,6 @@ class ToNormalizedTensor(object):
 		# torch image: <color x height x width>
 		image = image.transpose((2,0,1))
 		image = torch.from_numpy(image).float()
-		image = image.div(255.0)
 		return {'breed': breed, 'image': image}
 
 from torch.autograd import Variable
@@ -160,7 +158,7 @@ class SimpleConv(torch.nn.Module):
 
 model = SimpleConv()
 
-criterion = torch.nn.L1Loss(size_average=False)
+criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 total_step = len(train_loader)
