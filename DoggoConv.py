@@ -74,35 +74,33 @@ class SimpleConv(torch.nn.Module):
 		  	torch.nn.BatchNorm2d(10),
 		  	torch.nn.ReLU())
 		self.layer2 = torch.nn.Sequential(
-			torch.nn.Conv2d(10, 15, 5, 2),
-			torch.nn.BatchNorm2d(15),
+			torch.nn.Conv2d(10, 20, 5, 2),
+			torch.nn.BatchNorm2d(20),
 			torch.nn.ReLU())
 		self.layer3 = torch.nn.Sequential(
-			torch.nn.Conv2d(15, 20, 5, 2),
-			torch.nn.BatchNorm2d(20),
+			torch.nn.Conv2d(20, 40, 5, 2),
+			torch.nn.BatchNorm2d(40),
 			torch.nn.ReLU()) 
-		self.layer4 = torch.nn.Sequential(
-			torch.nn.Conv2d(20, 25, 5, 2),
-			torch.nn.BatchNorm2d(25),
-			torch.nn.ReLU()) 
+	
 		self.pool = torch.nn.MaxPool2d(2, 2)
 
-		self.fc1 = torch.nn.Linear(400, 120)
-
+		self.fc1 = torch.nn.Linear(21160, 120)
+		
 	def forward(self, x):
 		x = self.layer1(x)
 		x = self.layer2(x)
-		x = self.pool(x)
 		x = self.layer3(x)
-		x = self.layer4(x)
 		x = self.pool(x)
 		x = x.view(x.shape[0], -1)
 		x = self.fc1(x)
 		return x
 
+
 model = SimpleConv()
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+showTorchImage(train_set[234][0]) # image check works
 
 total_step = len(train_loader)
 # training network
@@ -117,9 +115,9 @@ for epoch in range(n_epochs):
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
-		if (i+1) % 50 == 0:
-			print(breeds[1])
-			print(outputs[1])
+		if (i+1) % 100 == 0:
+			print(brands[2])
+			print(outputs[2])
 			print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, n_epochs, i+1, total_step, loss.item()))
 
 
